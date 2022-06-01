@@ -29,34 +29,47 @@ package com.example.demo.routes;
  */
 
 import com.example.demo.processors.InjectHeadersProcessor;
-import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 
 /**
  * @author Zubair Asghar
  */
 
+@Component
 public class BasicDhis2ApiRoute extends RouteBuilder
 {
     private static final Logger LOGGER = LoggerFactory.getLogger( BasicDhis2ApiRoute.class );
 
+    @Value( "${dhis2.api.host}")
+    private String host;
+
+    @Value("${dhis2.api.port}")
+    private int port;
+
+    @Autowired
+    private InjectHeadersProcessor processor;
+
     @Override
     public void configure()
     {
-
         restConfiguration().component("jetty")
-                .host("localhost")
-                .port(8080)
+                .host(host)
+                .port(port)
                 .bindingMode(RestBindingMode.json);
+
         from("direct:start")
-                .process( new InjectHeadersProcessor() )
+                .process( processor )
                 .to("rest:get:/dhis_war/api/resources")
-                .log("${body}");
+                .log(LoggingLevel.INFO, "${body}")
+                .to("file:/Users/rajazubair/camel-test-to?fileName=response.txt")
+                .log(LoggingLevel.INFO, " Response written in file ");
     }
 }

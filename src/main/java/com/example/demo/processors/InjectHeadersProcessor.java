@@ -30,7 +30,10 @@ package com.example.demo.processors;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
 
 import java.util.Base64;
 
@@ -38,6 +41,7 @@ import java.util.Base64;
  * @author Zubair Asghar
  */
 
+@Component
 public class InjectHeadersProcessor implements Processor
 {
     @Value( "${dhis2.api.username}" )
@@ -50,9 +54,7 @@ public class InjectHeadersProcessor implements Processor
     public void process(Exchange exchange) throws Exception
     {
         String secret = "Basic ";
-
-        String credentials = "admin" +":"  + "district";
-
+        String credentials = username +":"  + password;
         String token = secret + Base64.getEncoder().encodeToString( credentials.getBytes() );
 
         exchange.getIn().setHeader("Authorization", token );
