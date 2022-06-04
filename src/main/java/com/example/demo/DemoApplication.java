@@ -1,8 +1,10 @@
 package com.example.demo;
 
 
+import com.example.demo.processors.InjectHeadersProcessor;
 import com.example.demo.routes.BasicDhis2ApiRoute;
 import org.apache.camel.CamelContext;
+import org.apache.camel.Processor;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.springframework.beans.factory.annotation.Autowired;

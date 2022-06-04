@@ -29,8 +29,11 @@ package com.example.demo.routes;
  */
 
 import com.example.demo.processors.InjectHeadersProcessor;
+import com.example.demo.processors.ObjectMapperProcessor;
+import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,22 +57,46 @@ public class BasicDhis2ApiRoute extends RouteBuilder
     @Value("${dhis2.api.port}")
     private int port;
 
+    @Value("${dhis2.api.setting}")
+    private String settingUrl;
+
     @Autowired
-    private InjectHeadersProcessor processor;
+    private InjectHeadersProcessor injectAuthenticationHeaderProcessor;
+
+    @Autowired
+    private ObjectMapperProcessor objectMapperProcessor;
 
     @Override
     public void configure()
     {
+        onException( HttpOperationFailedException.class )
+                .log( LoggingLevel.ERROR,
+                        "HTTP response body => ${exchangeProperty.CamelExceptionCaught.responseBody}" )
+                .process( exchange -> {
+                    throw (Exception) exchange.getProperty("CamelExceptionCaught" );
+                } );
+
         restConfiguration().component("jetty")
                 .host(host)
                 .port(port)
                 .bindingMode(RestBindingMode.json);
 
         from("direct:start")
-                .process( processor )
-                .to("rest:get:/dhis_war/api/resources")
-                .log(LoggingLevel.INFO, "${body}")
+                .process(injectAuthenticationHeaderProcessor)
+                .toD("rest:get:" + settingUrl)
+                .log(LoggingLevel.INFO, "http response code: ${header.CamelHttpResponseCode}")
+                .log(LoggingLevel.INFO, "Payload data: ${body}")
+
                 .to("file:/Users/rajazubair/camel-test-to?fileName=response.txt")
-                .log(LoggingLevel.INFO, " Response written in file ");
+                .log(LoggingLevel.INFO, " Response written in file ")
+                .to("direct:changeSetting");
+
+        from("direct:changeSetting" )
+                .process( objectMapperProcessor )
+                .to("rest:post:/dhis_war/api/39/userSettings/keyMessageSmsNotification")
+                .log(LoggingLevel.INFO, "http response code: ${header.CamelHttpResponseCode}")
+                .log( "User Settings updated" );
+
+
     }
 }

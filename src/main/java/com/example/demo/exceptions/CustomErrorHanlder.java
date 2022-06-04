@@ -1,4 +1,4 @@
-package com.example.demo.processors;
+package com.example.demo.exceptions;
 
 /*
  * Copyright (c) 2004-2022, University of Oslo
@@ -28,33 +28,22 @@ package com.example.demo.processors;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import java.util.Base64;
-
 /**
  * @author Zubair Asghar
  */
-
-@Component
-public class InjectHeadersProcessor implements Processor
+public class CustomErrorHanlder extends Throwable
 {
-    @Value( "${dhis2.api.username}" )
-    private String username;
-
-    @Value( "${dhis2.api.password}" )
-    private String password;
+    @Override
+    public String getMessage()
+    {
+        System.out.println("custom message for error handler");
+        return super.getMessage();
+    }
 
     @Override
-    public void process(Exchange exchange) throws Exception
+    public void printStackTrace()
     {
-        String secret = "Basic ";
-        String credentials = username +":"  + password;
-        String token = secret + Base64.getEncoder().encodeToString( credentials.getBytes() );
-
-        exchange.getIn().setHeader("Authorization", token );
+        System.out.println( "custom printstacktrace" );
+        super.printStackTrace();
     }
 }
